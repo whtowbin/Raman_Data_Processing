@@ -34,15 +34,6 @@ ax.imshow(median_calibrate)
 
 #%%
 
-peak_positions = median_calibrate.argmax(axis = 0)
-peak_maxs = median_calibrate.max(axis = 0)
-
-
-peak_widths = np.apply_along_axis(signal.peak_widths, axis = 0, median_calibrate, kwargs={peaks:[]})# This wont work becasue I cant specify the height for each column. I need a new funtion that can do all of this in 1 step
-peak_sigmas = peak_widths/ 2.355 # conversiton from full width half max FWHM/ 2sqrt(2*ln(2))
-
-# Consider masking array with Nans for areas where laser signal is unstable
-
 
 def gauss(x, mu, sd, A=1):
 
@@ -67,10 +58,10 @@ def gauss(x, mu, sd, A=1):
     return G
     
 
-def index_array(image, axis = 0)
+def index_array(image, axis = 0):
     return np.arange(image.shape[axis])
 
-def fit_spectrum_peak(array, length):
+def fit_spectrum_peak(array, indices):
     """Function for fitting a gaussian peak to an array of 1D Raman unsaturated spectra
 
     Args:
@@ -82,16 +73,28 @@ def fit_spectrum_peak(array, length):
 
     peak_position = array.argmax(axis = 0)
     peak_max = array.max(axis = 0)
-    peak_widths = signal.peak_widths(array,peak_position)
+    peak_width = signal.peak_widths(array,[peak_position])[0][0]
     peak_sigma = peak_width/ 2.355 # conversiton from full width half max FWHM/ 2sqrt(2*ln(2))
     try:
         popt, pcov = optimize.curve_fit(f=gauss,xdata=indices,ydata=array,p0=(peak_position,peak_sigma,peak_max))
     except:
-        pass
-    return popt
+        print("An exception occured during guassian fitting on array")
+        popt = np.array([np.nan,np.nan,np.nan])
+    return popt[0]
+
 #mu, sd, A
-def calibrate(image, peak_pos):
+def test_fit_spectrum(image):
     indices = index_array(image)
+    mid_idx = int(np.round(image.shape[1]/2))
+    array = median_calibrate[:,mid_idx]
+    peak_pos = fit_spectrum_peak(array, indices)
+    assert peak_pos is not np.nan
+    return peak_pos
+
+def calibrate_image(image, peak_pos=1332):
+    indices = index_array(image)
+    peak_positions = np.apply_along_axis(fit_spectrum_peak, axis = 1,arr = image, **{indices:indices})
+    return peak_positions
 
 
 # %%
@@ -107,11 +110,6 @@ Notes on how to process data:
 
 
 
-def fit_gaussian(image):
-    # Fit 1D Gaussian array along each column in the image
-    gaussian_fits = []
-
-def calibrate_raman(image):
 
 
 # %%
