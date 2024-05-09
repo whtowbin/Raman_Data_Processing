@@ -19,18 +19,14 @@ image_transforms = []
 #%%
 median_calibrate = skfilter.median(calibrate)
 
-# %%
-plt.plot(median_calibrate.argmax(axis=0), marker = ".", linestyle = 'none')
-plt.ylim(219,226)
+# # %%
+# plt.plot(median_calibrate.argmax(axis=0), marker = ".", linestyle = 'none')
+# plt.ylim(219,226)
 
 
-
-# %%
-
-
-fig, ax = plt.subplots()
-ax.imshow(median_calibrate)
-#plt.ylim(200, 250)
+# fig, ax = plt.subplots()
+# ax.imshow(median_calibrate)
+# #plt.ylim(200, 250)
 
 #%%
 
@@ -61,7 +57,7 @@ def gauss(x, mu, sd, A=1):
 def index_array(image, axis = 0):
     return np.arange(image.shape[axis])
 
-def fit_spectrum_peak(array, indices):
+def fit_spectrum_peak(array):#, indices):
     """Function for fitting a gaussian peak to an array of 1D Raman unsaturated spectra
 
     Args:
@@ -70,7 +66,7 @@ def fit_spectrum_peak(array, indices):
     Returns:
         gaussian_max (numpy array): peak position with subpixel accuracy
     """
-
+    indices = np.arange(len(array))
     peak_position = array.argmax(axis = 0)
     peak_max = array.max(axis = 0)
     peak_width = signal.peak_widths(array,[peak_position])[0][0]
@@ -93,9 +89,27 @@ def test_fit_spectrum(image):
 
 def calibrate_image(image, peak_pos=1332):
     indices = index_array(image)
-    peak_positions = np.apply_along_axis(fit_spectrum_peak, axis = 1,arr = image, **{indices:indices})
+    # apply_along_axis is failing with error: TypeError: unhashable type: 'numpy.ndarray'
+    peak_positions = np.apply_along_axis(fit_spectrum_peak, axis = 0,arr = image,) #**{indices:[indices]})
     return peak_positions
 
+
+#%%
+def my_func(a):
+    """Average first and last element of a 1-D array"""
+    return (a[0] + a[-1]) * 0.5
+
+result =np.apply_along_axis(np.mean, 0, median_calibrate)
+plt.plot(result)
+#%%
+peak_pos = calibrate_image(median_calibrate)
+
+#%%
+fig, ax = plt.subplots(figsize=(12,8))
+ax.plot(peak_pos)
+ax.set_ylim((221,225))
+ax.set_xlabel("Column")
+ax.set_ylabel("Peak Position")
 
 # %%
 """
