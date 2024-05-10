@@ -7,14 +7,14 @@
 
 **Table of Contents**
 
-- [Installation](#installation)
-- [License](#license)
+- [Hyper-Raman](#hyper-raman)
+  - [License](#license)
 
-## Installation
+<!-- ## Installation -->
 
-```console
+<!-- ```console
 pip install hyper-raman
-```
+``` -->
 
 ## License
 
