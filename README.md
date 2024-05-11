@@ -1,7 +1,7 @@
 # Hyper-Raman
 
-[![PyPI - Version](https://img.shields.io/pypi/v/hyper-raman.svg)](https://pypi.org/project/hyper-raman)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hyper-raman.svg)](https://pypi.org/project/hyper-raman)
+<!-- [![PyPI - Version](https://img.shields.io/pypi/v/hyper-raman.svg)](https://pypi.org/project/hyper-raman)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hyper-raman.svg)](https://pypi.org/project/hyper-raman) -->
 
 -----
 
