@@ -7,7 +7,7 @@ from scipy import signal
 from scipy import optimize
 from scipy import interpolate
 from copy import deepcopy
-
+from numba import jit
 
 #%%
 calibrate = io.imread("/Users/wtowbin/Projects/hyper-raman/Dev_Data/Unsaturated Raman/Unsaturated Raman 10x_0000.tif")
@@ -135,7 +135,6 @@ def calibrate_array_wn(array ,peak_pos_wn=1332.0, laser_nm = 532, nm_per_pixel =
     array_nm = pixel_to_nm(peak_pos_nm, peak_pos_pixel, indices, nm_per_pixel)
     array_wn = nm_to_wn(array_nm, laser_nm)
     return array_wn
-
 #%%
 
 # Replace Defaults with image metadata pulled when stack is read in
@@ -159,33 +158,74 @@ def crop_central_columns(image, crop_percent= .05):
     return image[:,crop_low:crop_high]
 
 
+
 # I am not exactly sure how to do this interpolation and apply it to the images 
 # I think i need to crop the Data and then Interpolate it to the new array. 
 # It might make the most sense to do this in nanometers or pixel units then switch to wavenumber
 # I think that the way it should go is to apply it to each row, func = interpolate(Detector X, Column_Data)
 # func (output array)
 def interpolate_images(calib_image_wn, image, min=None, max= None):
-    interp_spacing = np.round((np.min(calib_image_wn[-1,:] - calib_image_wn[-2,:])),1)
+    interp_spacing = np.round((np.nanmin(calib_image_wn[-1,:] - calib_image_wn[-2,:])),1)
     if min == None:
-        min = calib_image_wn[0,:].max()
+        min = round_half(np.nanmax(calib_image_wn[0,:]))
     if max == None:
-        max = calib_image_wn[-1,:].min()
+        max = round_half(number=np.nanmin(calib_image_wn[-1,:]))
+    print(f"min:{min},  max:{max}, step:{interp_spacing}")
     interp_array_wn = np.arange(min,max,interp_spacing)
-    def interp_func(x, y, interp_array = interp_array_wn):
+    
+    def interp_func(image_stack, interp_array = interp_array_wn):
+        x = image_stack[:,:,0]
+        y = image_stack[:,:,1]
         return interpolate.CubicSpline(x,y, interp_array)
-    return np.apply_along_axis(interp_func, axis = 0,arr = calib_image_wn, **{"y":image})
+    
+    stacked = np.dstack([calib_image_wn,image])
+    return np.apply_along_axis(interp_func, axis = 0,arr = stacked)
 
-    # Maybe Use 
+    # I need to iterate over both arrays at the same time. 
     
 
 def padding_or_cropping_function(wn_array):
     # This shoud make a repeatable padding or cropping function the can be applied to each image in the same way that whe wavenumber array is to make wavenumber spacing aligned
     pass
 
+
+#%%
+
 #%%
 wn_calibration_array = calibrate_image(median_calibrate)
+#%%
+
+cropped_wn = crop_central_columns(wn_calibration_array)
+
+cropped_image = crop_central_columns(median_calibrate)
+
+#interpolate_images(cropped_wn, cropped_image)
 
 
+
+#%%d
+#I could maybe use numba to speed this up but I would probbaly need to switch to numpy's linear interp or numba fast iterp package 
+
+def interp_iterate(calib_image_wn, image, min=None, max= None):
+    interp_spacing = np.round((np.nanmin(calib_image_wn[-1,:] - calib_image_wn[-2,:])),1)
+    if min == None:
+        min = round_half(np.nanmax(calib_image_wn[0,:]))
+    if max == None:
+        max = round_half(number=np.nanmin(calib_image_wn[-1,:]))
+    interp_array_wn = np.arange(min,max,interp_spacing)
+
+    results = []
+    
+    for idx in range(calib_image_wn.shape[1]):
+        x = calib_image_wn[:,idx]
+        y = image[:,idx]
+
+        interp_fn = interpolate.Akima1DInterpolator(x,y)
+        results.append(interp_fn(interp_array_wn))
+    return np.array(results)
+#%%
+
+test_interp = interp_iterate(cropped_wn, cropped_image)
 #%%
 fig, ax = plt.subplots(figsize=(12,8))
 plt.plot(wn_calibration_array[-2, :], marker = ".")
@@ -194,7 +234,15 @@ ax.set_xlabel("Column")
 ax.set_ylabel("Pixel row in wn")
 
 #%%
+fig, ax = plt.subplots(figsize=(12,8))
+plt.plot(wn_calibration_array[222, :], marker = ".")
+ax.set_ylim((1315,1335))
+ax.set_xlabel("Column")
+ax.set_ylabel("Pixel row in wn")
+
+#%%
 plt.imshow(wn_calibration_array)
+
 
 #%%
 # make array from max to min and map data onto it
