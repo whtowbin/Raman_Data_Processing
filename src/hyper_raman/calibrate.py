@@ -8,9 +8,9 @@ from scipy import optimize
 from scipy import interpolate
 from copy import deepcopy
 from numba import jit
-
+from pathlib import Path
 #%%
-calibrate = io.imread("/Users/wtowbin/Projects/hyper-raman/Dev_Data/Unsaturated Raman/Unsaturated Raman 10x_0000.tif")
+calibrate = io.imread(fname="/Users/wtowbin/Projects/hyper-raman/Dev_Data/Unsaturated Raman/Unsaturated Raman 10x_0000.tif")
 
 def get_metadata(directory):
     # function to read metadata file for image calibration
@@ -199,33 +199,62 @@ cropped_wn = crop_central_columns(wn_calibration_array)
 
 cropped_image = crop_central_columns(median_calibrate)
 
+
+
 #interpolate_images(cropped_wn, cropped_image)
 
 
 
 #%%d
 #I could maybe use numba to speed this up but I would probbaly need to switch to numpy's linear interp or numba fast iterp package 
-
-def interp_iterate(calib_image_wn, image, min=None, max= None):
-    interp_spacing = np.round((np.nanmin(calib_image_wn[-1,:] - calib_image_wn[-2,:])),1)
+#@jit
+def interpolate_image(calib_image_wn, image, min=None, max= None, return_wn = False):
+    interp_spacing = np.round((np.min(calib_image_wn[-1,:] - calib_image_wn[-2,:])),1)
     if min == None:
-        min = round_half(np.nanmax(calib_image_wn[0,:]))
+        min = np.round(np.max(calib_image_wn[0,:]),0)
     if max == None:
-        max = round_half(number=np.nanmin(calib_image_wn[-1,:]))
+        max = np.round(np.min(calib_image_wn[-1,:]),0)
     interp_array_wn = np.arange(min,max,interp_spacing)
 
+    if return_wn == True:
+        return interp_array_wn
+    
     results = []
     
     for idx in range(calib_image_wn.shape[1]):
         x = calib_image_wn[:,idx]
         y = image[:,idx]
-
         interp_fn = interpolate.Akima1DInterpolator(x,y)
-        results.append(interp_fn(interp_array_wn))
-    return np.array(results)
+        results.append(interp_fn(interp_array_wn)) 
+        
+    return np.array(results).T
+#%%
+# %%timeit
+wn_1D = interpolate_image(cropped_wn, cropped_image, return_wn=True)
+test_interp = interpolate_image(cropped_wn, cropped_image)
 #%%
 
-test_interp = interp_iterate(cropped_wn, cropped_image)
+fig, ax = plt.subplots(figsize=(12,8))
+plt.plot(wn_1D,test_interp[:,10:300])
+ax.set_ylim((0,1000))
+ax.set_xlabel("Column")
+ax.set_ylabel("Pixel row in wn")
+#%%
+calibrated_avg = test_interp.mean(axis=1)
+fig, ax = plt.subplots(figsize=(12,8))
+plt.plot(wn_1D,calibrated_avg)
+ax.set_ylim((0,1000))
+ax.set_xlabel("Column")
+ax.set_ylabel("Pixel row in wn")
+
+#%%
+uncalibrated_avg = cropped_image.mean(axis=1)
+fig, ax = plt.subplots(figsize=(12,8))
+plt.plot(uncalibrated_avg)
+ax.set_ylim((0,1000))
+ax.set_xlabel("Column")
+ax.set_ylabel("Pixel row in wn")
+
 #%%
 fig, ax = plt.subplots(figsize=(12,8))
 plt.plot(wn_calibration_array[-2, :], marker = ".")
@@ -240,12 +269,46 @@ ax.set_ylim((1315,1335))
 ax.set_xlabel("Column")
 ax.set_ylabel("Pixel row in wn")
 
+
+#%%
+# Plot Noise in array
+fig, ax = plt.subplots(figsize=(12,8))
+plt.plot(wn_calibration_array[222, :], marker = ".")
+ax.set_ylim((1328.5,1329))
+ax.set_xlim((1050,1115))
+ax.set_xlabel("Column")
+ax.set_ylabel("Pixel row in wn")
 #%%
 plt.imshow(wn_calibration_array)
 
+#%%
+
+
+io.imsave("Interpolated_image_test.tif", test_interp)
+
 
 #%%
+# TODO 
+# Correct for Hot Pixels (maybe dark too but less of an issue)
+# Normalize Image Intensity 
+# Subtract Dark Image
+
+# Workflow 
+# - Process Calibration Data (Do before Wavenumber Correction)
+#       - Produce Files needed for data correction. Wavenumber interpolation, Hot Pixel Mask, Normalization Array (Integration of Diamond Peak), Dark Current Image.
+#           - Pixel replacement, Make Pixel mask for hot and dark pixels. replace those pixels with a median. 
+#            - corrected image = (( replace mask with median ) - dark correction) * (column intenisty correction) * Laser power fluctuation 
+
+#Iterate over every image and apply calibration.
+# Generate Datacube. 
+# Xarray -- save as netcdf file
+#%%
 # make array from max to min and map data onto it
+
+# I think this should run on the raw data prior to any interpolation to a wavenumber grid
+def image_correct(image, bad_pixel_mask, col_intensity_correctiont= None, internal_standard_rows= None ):
+    pass
+
 
 # %%
 """
@@ -262,4 +325,8 @@ Notes on how to process data:
 
 
 
+# %%
+data_path = Path("../../Dev_Data/Test_Data/00000.75 microns.tiff")
+
+io.imread(data_path)
 # %%
