@@ -9,9 +9,7 @@ from scipy import interpolate
 from copy import deepcopy
 from numba import jit
 from pathlib import Path
-#%%
-calibrate = io.imread(fname="/Users/wtowbin/Projects/hyper-raman/Dev_Data/Unsaturated Raman/Unsaturated Raman 10x_0000.tif")
-
+# #%%
 def get_metadata(directory):
     # function to read metadata file for image calibration
     pass
@@ -33,17 +31,8 @@ def log_transforms(func, transfrom_log = image_transform_log):
 #%%
 
 def round_half(number):
+    # Function to round a number to the nearest 0.5. 
     return np.round(number*2)/2
-#%%
-median_calibrate = skfilter.median(calibrate)
-
-# # %%
-# plt.plot(median_calibrate.argmax(axis=0), marker = ".", linestyle = 'none')
-# plt.ylim(219,226)
-
-# fig, ax = plt.subplots()
-# ax.imshow(median_calibrate)
-# #plt.ylim(200, 250)
 
 #%%
 def gauss(x, mu, sd, A=1):
@@ -91,9 +80,10 @@ def fit_spectrum_peak(array):
 
 
 def test_fit_spectrum(image):
+    # test the fit spectrum function
     indices = index_array(image)
     mid_idx = int(np.round(image.shape[1]/2))
-    array = median_calibrate[:,mid_idx]
+    array = image[:,mid_idx] # median_calibrate[:,mid_idx] # I think this will break since it refers to the median filtered image
     peak_pos = fit_spectrum_peak(array, indices)
     assert peak_pos is not np.nan
     return peak_pos
@@ -188,27 +178,22 @@ def padding_or_cropping_function(wn_array):
     # This shoud make a repeatable padding or cropping function the can be applied to each image in the same way that whe wavenumber array is to make wavenumber spacing aligned
     pass
 
-
-#%%
-
-#%%
-wn_calibration_array = calibrate_image(median_calibrate)
-#%%
-
-cropped_wn = crop_central_columns(wn_calibration_array)
-
-cropped_image = crop_central_columns(median_calibrate)
-
-
-
-#interpolate_images(cropped_wn, cropped_image)
-
-
-
 #%%d
 #I could maybe use numba to speed this up but I would probbaly need to switch to numpy's linear interp or numba fast iterp package 
 #@jit
 def interpolate_image(calib_image_wn, image, min=None, max= None, return_wn = False):
+    """_summary_
+
+    Args:
+        calib_image_wn (_type_): _description_
+        image (_type_): _description_
+        min (_type_, optional): _description_. Defaults to None.
+        max (_type_, optional): _description_. Defaults to None.
+        return_wn (bool, optional): _description_. Defaults to False.
+
+    Returns:
+        _type_: _description_
+    """
     interp_spacing = np.round((np.min(calib_image_wn[-1,:] - calib_image_wn[-2,:])),1)
     if min == None:
         min = np.round(np.max(calib_image_wn[0,:]),0)
@@ -228,63 +213,6 @@ def interpolate_image(calib_image_wn, image, min=None, max= None, return_wn = Fa
         results.append(interp_fn(interp_array_wn)) 
         
     return np.array(results).T
-#%%
-# %%timeit
-wn_1D = interpolate_image(cropped_wn, cropped_image, return_wn=True)
-test_interp = interpolate_image(cropped_wn, cropped_image)
-#%%
-
-fig, ax = plt.subplots(figsize=(12,8))
-plt.plot(wn_1D,test_interp[:,10:300])
-ax.set_ylim((0,1000))
-ax.set_xlabel("Column")
-ax.set_ylabel("Pixel row in wn")
-#%%
-calibrated_avg = test_interp.mean(axis=1)
-fig, ax = plt.subplots(figsize=(12,8))
-plt.plot(wn_1D,calibrated_avg)
-ax.set_ylim((0,1000))
-ax.set_xlabel("Column")
-ax.set_ylabel("Pixel row in wn")
-
-#%%
-uncalibrated_avg = cropped_image.mean(axis=1)
-fig, ax = plt.subplots(figsize=(12,8))
-plt.plot(uncalibrated_avg)
-ax.set_ylim((0,1000))
-ax.set_xlabel("Column")
-ax.set_ylabel("Pixel row in wn")
-
-#%%
-fig, ax = plt.subplots(figsize=(12,8))
-plt.plot(wn_calibration_array[-2, :], marker = ".")
-ax.set_ylim((3560,3580))
-ax.set_xlabel("Column")
-ax.set_ylabel("Pixel row in wn")
-
-#%%
-fig, ax = plt.subplots(figsize=(12,8))
-plt.plot(wn_calibration_array[222, :], marker = ".")
-ax.set_ylim((1315,1335))
-ax.set_xlabel("Column")
-ax.set_ylabel("Pixel row in wn")
-
-
-#%%
-# Plot Noise in array
-fig, ax = plt.subplots(figsize=(12,8))
-plt.plot(wn_calibration_array[222, :], marker = ".")
-ax.set_ylim((1328.5,1329))
-ax.set_xlim((1050,1115))
-ax.set_xlabel("Column")
-ax.set_ylabel("Pixel row in wn")
-#%%
-plt.imshow(wn_calibration_array)
-
-#%%
-
-
-io.imsave("Interpolated_image_test.tif", test_interp)
 
 
 #%%
