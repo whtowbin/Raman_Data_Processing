@@ -10,9 +10,26 @@ from copy import deepcopy
 from numba import jit
 from pathlib import Path
 # #%%
-def get_metadata(directory):
+def get_metadata(file_path):
     # function to read metadata file for image calibration
-    pass
+    metadata_df = pd.read_csv(file_path,
+                delimiter="\t",
+                index_col=0,
+                names=["values", "none"])
+
+    metadata_df = metadata_df.iloc[:,0:1]
+    metadata_dict = metadata_df.to_dict()["values"]
+
+    Step_XY = metadata_dict["Step Size (microns)"]
+    Step_Z = metadata_dict["Step Size (Z)(Microns)"]
+    nm_per_pixel = metadata_dict["nm/pixel"]
+    Illumination_Source = metadata_dict['Illumination Source']
+    try:
+        laser_nm = float(metadata['Illumination_Source'].split()[0])
+    except:
+        print(f"Could not determine laser wavelength from metadata. Input given:{Illumination_Source}")
+        input = input("Please Input the laser wavelength used for this data?:")
+    return {"Step_XY":Step_XY, "Step_Z": Step_Z, "nm_per_pixel": nm_per_pixel, 'Illumination_Source': Illumination_Source, "laser_nm":laser_nm }
 
 # Running List of image Transformations to apply to full dataset e.g., median filter, normalization, cropping, etc.
 image_transform_log = []

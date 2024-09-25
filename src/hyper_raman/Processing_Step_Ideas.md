@@ -1,12 +1,20 @@
 # Processing Step List
 
-
-
 ## Calibration Image
-1) Calibrate Spectometer image based on Diamond Peak Position 
+1) Calibrate Spectrometer image based on Diamond Peak Position 
 2) Interpolate Data to Regular Grid
 3) For each spectrometer Image in a folder do this to create an image
 4) Then Repeat to stack each image into a final 
+
+## How to read through original files 
+Here is the general format:
+Directory
+  - Metadata.txt
+  - Slices
+    - Directory Names: Position# microns
+      - Images possibly multiple if averages 
+  
+I should process the Calibration and Dark images the same way with this.
 
 
 ## Questions to Work Through
