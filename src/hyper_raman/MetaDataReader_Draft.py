@@ -12,6 +12,7 @@ def read_metadata(Path):
     Args:
         Path (_type_): _description_
     """
+    # read csv with Pandas and load it into a dict to access the values 
     metadata_df = pd.read_csv(Path,
                 delimiter="\t",
                 index_col=0,
@@ -25,11 +26,12 @@ def read_metadata(Path):
     nm_per_pixel = metadata_dict["nm/pixel"]
     Illumination_Source = metadata_dict['Illumination Source']
     try:
-        laser_nm = float(metadata['Illumination_Source'].split()[0])
-    except:
+        laser_nm = float(Illumination_Source.split()[0])
+    except Exception as error:
+        print("An error occurred:", type(error).__name__, "–", error)
         print(f"Could not determine laser wavelength from metadata. Input given:{Illumination_Source}")
-        input = input("Please Input the laser wavelength used for this data?:")
-    return {"Step_XY":Step_XY, "Step_Z": Step_Z, "nm_per_pixel": nm_per_pixel, 'Illumination_Source': Illumination_Source, "laser_nm":laser_nm }
+        laser_nm = input("Please Input the laser wavelength used for this data?:")
+    return {"Step_XY":Step_XY, "Step_Z": Step_Z, "nm_per_pixel": nm_per_pixel, 'Illumination_Source': Illumination_Source, "laser_nm":laser_nm}
 
 # %%
 #%%
@@ -56,21 +58,35 @@ def list_directories(dir):
     p = Path(dir)
     return [x for x in p.iterdir() if x.is_dir()]
     
-def list_files(dir):
+def list_files(dir, filetype = "*.tiff"):
     p = Path(dir)
-    p.glob("*.tiff")
-    return [x for x in p.iterdir() if x.is_file()]
+    return list(sorted(p.glob(filetype)))
+    #return [x for x in p.iterdir() if x.is_file()]
+
+def parse_position_from_name(path_object):
+    # Assumes files are in the format of "####.## microns.tiff" 
+    return float(path_object.name.split(" ")[0])
+
+#  
 
 
-#%%
+
+# Test section
+#%% Test section
 dir = "/Users/wtowbin/Projects/hyper-raman/Dev_Data/unsat raman"
-
 
 test_image_dir = "/Users/wtowbin/Projects/hyper-raman/Dev_Data/Test_Data"
 #%%
 
 metadata = read_metadata(Path_name)
 
+Dir_tree = list_directories(dir)
+
+img_tree = list_files(test_image_dir)
+
+
+
+#%%
 if __name__ == "__main__":
     read_metadata(Path_name)
 # %%

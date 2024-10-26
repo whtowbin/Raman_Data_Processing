@@ -10,30 +10,15 @@ from copy import deepcopy
 from numba import jit
 from pathlib import Path
 # #%%
-def get_metadata(file_path):
-    # function to read metadata file for image calibration
-    metadata_df = pd.read_csv(file_path,
-                delimiter="\t",
-                index_col=0,
-                names=["values", "none"])
-
-    metadata_df = metadata_df.iloc[:,0:1]
-    metadata_dict = metadata_df.to_dict()["values"]
-
-    Step_XY = metadata_dict["Step Size (microns)"]
-    Step_Z = metadata_dict["Step Size (Z)(Microns)"]
-    nm_per_pixel = metadata_dict["nm/pixel"]
-    Illumination_Source = metadata_dict['Illumination Source']
-    try:
-        laser_nm = float(metadata['Illumination_Source'].split()[0])
-    except:
-        print(f"Could not determine laser wavelength from metadata. Input given:{Illumination_Source}")
-        input = input("Please Input the laser wavelength used for this data?:")
-    return {"Step_XY":Step_XY, "Step_Z": Step_Z, "nm_per_pixel": nm_per_pixel, 'Illumination_Source': Illumination_Source, "laser_nm":laser_nm }
 
 # Running List of image Transformations to apply to full dataset e.g., median filter, normalization, cropping, etc.
 image_transform_log = []
 # I can potentially have another list of operations performed on calibration images
+
+def start_logging():
+    return []
+
+image_transform_log = start_logging()
 
 def reset_transform_log(transform_log = image_transform_log):
     transform_log.clear()
@@ -165,7 +150,7 @@ def crop_central_columns(image, crop_percent= .05):
     return image[:,crop_low:crop_high]
 
 
-
+#TODO Check if I can delete this function, I think it is mostly replicated btter below. 
 # I am not exactly sure how to do this interpolation and apply it to the images 
 # I think i need to crop the Data and then Interpolate it to the new array. 
 # It might make the most sense to do this in nanometers or pixel units then switch to wavenumber
@@ -199,8 +184,8 @@ def padding_or_cropping_function(wn_array):
 #I could maybe use numba to speed this up but I would probbaly need to switch to numpy's linear interp or numba fast iterp package 
 #@jit
 def interpolate_image(calib_image_wn, image, min=None, max= None, return_wn = False):
-    """_summary_
-
+    """ Interpolates a spectroscopic image in the spectral domain (1D) using an Akima 1D interpolator. 
+    (This could be make faster with a Inverse Distance Interpolation in 1D ( which would be a dot product of a the initial Wn coordiate grid with the new 1 )) 
     Args:
         calib_image_wn (_type_): _description_
         image (_type_): _description_
@@ -211,6 +196,7 @@ def interpolate_image(calib_image_wn, image, min=None, max= None, return_wn = Fa
     Returns:
         _type_: _description_
     """
+    # determine the spacing for the interpolation, then make array with min and max limits 
     interp_spacing = np.round((np.min(calib_image_wn[-1,:] - calib_image_wn[-2,:])),1)
     if min == None:
         min = np.round(np.max(calib_image_wn[0,:]),0)
@@ -232,6 +218,8 @@ def interpolate_image(calib_image_wn, image, min=None, max= None, return_wn = Fa
     return np.array(results).T
 
 
+
+
 #%%
 # TODO 
 # Correct for Hot Pixels (maybe dark too but less of an issue)
@@ -247,12 +235,25 @@ def interpolate_image(calib_image_wn, image, min=None, max= None, return_wn = Fa
 #Iterate over every image and apply calibration.
 # Generate Datacube. 
 # Xarray -- save as netcdf file
+
+#%%
+# Thread on how to write outlier detection. 
+# https://forum.image.sc/t/using-remove-outliers-filter-in-pyimagej/55460/4
+
 #%%
 # make array from max to min and map data onto it
 
 # I think this should run on the raw data prior to any interpolation to a wavenumber grid
 def image_correct(image, bad_pixel_mask, col_intensity_correctiont= None, internal_standard_rows= None ):
     pass
+
+
+def save_TIFF(image, path, filename, dtype = 'uint16'):
+    # TODO write metadata with image pixel spatial units and size, spectral. First and Last Value and shape
+    # 
+    imout = np.round(image).astype(dtype)
+    Pathout = Path(path,filename)
+    tifffile.imwrite(f"{Pathout}.tif", imout)
 
 
 # %%

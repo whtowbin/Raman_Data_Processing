@@ -7,7 +7,7 @@ name = "hyper-raman"
 dynamic = ["version"]
 description = ''
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.13"
 license = "MIT"
 keywords = []
 authors = [
@@ -16,15 +16,16 @@ authors = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = [
+  "xarray", "pandas", "numpy", "scipy", "matplotlib", "scikit-image", "numba"
+]
 
 [project.urls]
 Documentation = "https://github.com/unknown/hyper-raman#readme"
@@ -35,47 +36,12 @@ Source = "https://github.com/unknown/hyper-raman"
 path = "src/hyper_raman/__about__.py"
 
 [tool.hatch.envs.default]
+type = "virtual"
+installer = "uv"
+python = "[3.13]"
+
 dependencies = [
-  "coverage[toml]>=6.5",
-  "pytest",
-]
-[tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
-test-cov = "coverage run -m pytest {args:tests}"
-cov-report = [
-  "- coverage combine",
-  "coverage report",
-]
-cov = [
-  "test-cov",
-  "cov-report",
+  "xarray", "pandas", "numpy", "scipy", "matplotlib", "scikit-image", "numba"
 ]
 
-[[tool.hatch.envs.all.matrix]]
-python = ["3.8", "3.9", "3.10", "3.11", "3.12"]
 
-[tool.hatch.envs.types]
-dependencies = [
-  "mypy>=1.0.0",
-]
-[tool.hatch.envs.types.scripts]
-check = "mypy --install-types --non-interactive {args:src/hyper_raman tests}"
-
-[tool.coverage.run]
-source_pkgs = ["hyper_raman", "tests"]
-branch = true
-parallel = true
-omit = [
-  "src/hyper_raman/__about__.py",
-]
-
-[tool.coverage.paths]
-hyper_raman = ["src/hyper_raman", "*/hyper-raman/src/hyper_raman"]
-tests = ["tests", "*/hyper-raman/tests"]
-
-[tool.coverage.report]
-exclude_lines = [
-  "no cov",
-  "if __name__ == .__main__.:",
-  "if TYPE_CHECKING:",
-]

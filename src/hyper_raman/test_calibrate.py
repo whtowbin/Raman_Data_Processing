@@ -3,10 +3,15 @@ import calibrate
 from skimage import io
 import skimage.filters as skfilter
 import matplotlib.pyplot as plt
+import tifffile
+import numpy as np
 #%%
+image_transform_log = calibrate.start_logging()
+
 image = io.imread(fname="/Users/wtowbin/Projects/hyper-raman/Dev_Data/Unsaturated Raman/Unsaturated Raman 10x_0000.tif")
 
 median_calibrate = skfilter.median(image)
+
 
 # %%
 plt.plot(median_calibrate.argmax(axis=0), marker = ".", linestyle = 'none')
@@ -32,6 +37,9 @@ cropped_image = calibrate.crop_central_columns(median_calibrate)
 # %%timeit
 wn_1D = calibrate.interpolate_image(cropped_wn, cropped_image, return_wn=True)
 test_interp = calibrate.interpolate_image(cropped_wn, cropped_image)
+
+
+# Processing would loop through the stack and apply the dark correction,  cropping, and interpolation for each image then save it. 
 #%%
 
 fig, ax = plt.subplots(figsize=(12,8))
@@ -84,4 +92,9 @@ plt.imshow(wn_calibration_array)
 #%%
 
 
-io.imsave("Interpolated_image_test.tif", test_interp)
+#io.imsave("Interpolated_image_test.tif", test_interp)
+# %%
+imout16bit = np.round(test_interp).astype('uint16')
+
+tifffile.imwrite("Interpolated_image_test_custom.tif", imout16bit)
+# %%
