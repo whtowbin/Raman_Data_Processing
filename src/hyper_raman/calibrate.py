@@ -9,6 +9,7 @@ from scipy import interpolate
 from copy import deepcopy
 from numba import jit
 from pathlib import Path
+import tifffile
 # #%%
 
 # Running List of image Transformations to apply to full dataset e.g., median filter, normalization, cropping, etc.
@@ -272,7 +273,7 @@ Notes on how to process data:
 
 
 # %%
-data_path = Path("../../Dev_Data/Test_Data/00000.75 microns.tiff")
-
-io.imread(data_path)
+# Development check against local data (not in the repo); commented out so the module imports.
+# data_path = Path("../../Dev_Data/Test_Data/00000.75 microns.tiff")
+# io.imread(data_path)
 # %%

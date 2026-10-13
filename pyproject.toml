@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "hyper-raman"
 dynamic = ["version"]
-description = ''
+description = "Calibrate raw spectrometer images from a line-scanning Raman microscope (work in progress)"
 readme = "README.md"
 requires-python = ">=3.13"
 license = "MIT"
@@ -14,23 +14,19 @@ authors = [
   { name = "Henry Towbin", email = "24940778+whtowbin@users.noreply.github.com" },
 ]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 2 - Pre-Alpha",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "xarray", "pandas", "numpy", "scipy", "matplotlib", "scikit-image", "numba"
+  "xarray", "pandas", "numpy", "scipy", "matplotlib", "scikit-image", "numba", "tifffile"
 ]
 
 [project.urls]
-Documentation = "https://github.com/unknown/hyper-raman#readme"
-Issues = "https://github.com/unknown/hyper-raman/issues"
-Source = "https://github.com/unknown/hyper-raman"
+Documentation = "https://github.com/whtowbin/Raman_Data_Processing#readme"
+Issues = "https://github.com/whtowbin/Raman_Data_Processing/issues"
+Source = "https://github.com/whtowbin/Raman_Data_Processing"
 
 [tool.hatch.version]
 path = "src/hyper_raman/__about__.py"
@@ -44,4 +40,6 @@ dependencies = [
   "xarray", "pandas", "numpy", "scipy", "matplotlib", "scikit-image", "numba"
 ]
 
-
+# The development TIFFs in src/hyper_raman/ stay in the repository but out of the package.
+[tool.hatch.build]
+exclude = ["*.tif", "*.tiff"]
